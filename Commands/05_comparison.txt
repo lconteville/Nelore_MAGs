@@ -1,0 +1,10 @@
+#### Compare Nelore MAGs ####
+
+dRep compare -sa 0.99 -nc 0.3 -p 8 <output_compare_99ANI> -g <HQ_MAGs_directory>/*fa
+
+dRep compare -sa 0.95 -nc 0.3 -p 8 <output_compare_95ANI> -g <HQ_MAGs_directory>/*fa
+
+
+#### Compare Nelore MAGs with public set ####
+
+dRep compare -sa 0.95 -nc 0.3  -p 32 <output_compare_95ANI_publicset> -g <public_set_directory>/* <HQ_MAGs_directory>/*fa --S_algorithm fastANI --multiround_primary_clustering
