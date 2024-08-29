@@ -9,13 +9,15 @@ library(viridis)
 library(patchwork)
 library(cowplot)
 
+setwd("D:/Github/")
+
 #### THEME SET ####
 theme_set(theme_bw()+ theme(
-  axis.text = element_text(size=4, color = "black"),
-  axis.title = element_text(size = 4.5, color = "black"),
+  axis.text = element_text(size= 6, color = "black"),
+  axis.title = element_text(size = 6.5, color = "black"),
   axis.ticks = element_line(linewidth=0.25),
-  legend.text = element_text(size = 4, color = "black"),
-  legend.title = element_text(size = 4.2, color = "black"),
+  legend.text = element_text(size = 6, color = "black"),
+  legend.title = element_text(size = 6.2, color = "black"),
   strip.background = element_blank(),
   strip.text = element_text(size = 5,colour="black"),
   plot.title = element_text(size = 6,colour="black",hjust = -0.05,face="bold"),
@@ -23,7 +25,7 @@ theme_set(theme_bw()+ theme(
   panel.grid.minor = element_blank()))
 
 #### MAGs QUALITY ####
-quality_summary <-  read.csv("MAGs_data_input/Data/mags_quality_summary.tsv", header=TRUE, sep="\t")
+quality_summary <-  read.csv("Nelore_MAGs/Data/mags_quality_summary.tsv", header=TRUE, sep="\t")
 
 quality_summary$SampleType_Quality <- paste(quality_summary$SampleType,quality_summary$Quality_assessment, sep="_")
 
@@ -43,10 +45,10 @@ points <- ggplot(quality_summary, aes(x=Completeness, y=Contamination,
   theme(plot.margin = unit(c(0,4,2,0), "pt"),
         legend.title = element_blank(),
         legend.margin=margin(c(0, 0, 0, 0)), 
-        legend.spacing.x = unit(1, 'pt'),
-        legend.key.size = unit(10, 'pt'))+
+        legend.key.width = unit(11, 'pt'),
+        legend.key.height = unit(9, 'pt'))+
   scale_colour_manual(values=c("#CC0B0B","#0B7ACC","grey"))+
-  guides(colour=guide_legend(override.aes=list(size=3, alpha =1)))+ 
+  guides(colour=guide_legend(override.aes=list(size=2.5, alpha =1)))+ 
   ggtitle('A')
 
 points
@@ -58,74 +60,83 @@ leg_points <- as_ggplot(leg_points)
 hq <- quality_summary[quality_summary$Quality_assessment == c("High-quality"),]
 hq$SampleType <- factor(hq$SampleType, levels=c("Rumen","Feces"))
 
-m5 <- hq %>%
-  # create a new variable from count
-  mutate(countfactor=cut(contig_bp, breaks=c( 0, 1000000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 4500000, 5000000, 6000000),
-                         labels=c("1","1.5", "2", "2.5", "3", "3.5", "4", "4.5","5", "6"))) %>%
-  # change level order
-  mutate(countfactor=factor(as.character(countfactor), levels=levels(countfactor)))
+hist(hq$contig_bp)
 
-histo_size <- ggplot(m5, aes(x=countfactor, fill = SampleType)) + 
-  geom_histogram(stat="count")+
-  facet_wrap(SampleType~.)+
+ggplot(hq, aes(x=contig_bp)) + geom_histogram(binwidth=500000)
+
+histo_size <- ggplot(hq, aes(x=contig_bp, fill=SampleType)) + 
+  geom_histogram(bins = 15, color= "white")+
   scale_fill_manual(values=c("#CC0B0B","#0B7ACC"))+
-  theme(legend.position = "none",
-        strip.text = element_blank(),
-        plot.margin = unit(c(2,4,0,0), "pt"))+
-  xlab("MAGs Size")+
-  ylab("Count")+ 
-  ggtitle('B')
+  facet_wrap(SampleType~.)+
+  scale_x_continuous(labels = label_number(scale = 1/1000000),
+                     breaks = breaks_width(1000000))+
+  scale_y_continuous(limits=c(0, 150))+
+  xlab("MAGs Size (Mbp)")+
+  ylab("Count")+
+  theme(legend.position = "none")
 
 histo_size
 
 contigsplot <- ggplot(hq, aes(x=SampleType, y=n_contigs, fill=SampleType)) +
-  geom_boxplot(lwd=.3,outlier.shape = NA, alpha = 0.9) +
+  geom_boxplot(lwd=.3, alpha = 0.9) +
   scale_fill_manual(values=c("#CC0B0B","#0B7ACC")) +
   theme(legend.position = "none",
         axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         plot.margin = unit(c(2,0,2,4), "pt"))+
-  scale_y_continuous(breaks=pretty_breaks(n=5))+
+  scale_y_continuous(breaks = breaks_width(250))+
   ylab("# contigs")+ 
   ggtitle('C')
 
-n50 <- ggplot(hq, aes(x=SampleType, y=ctg_N50  , fill=SampleType)) +
-  geom_boxplot(lwd=.3,outlier.shape = NA, alpha = 0.9) +
+contigsplot
+
+summary(hq$n_contigs)
+nrow(hq[hq$n_contigs < 200,])
+
+n50 <- ggplot(hq, aes(x=SampleType, y=ctg_L50, fill=SampleType)) +
+  geom_boxplot(lwd=.3, alpha = 0.9) +
   scale_fill_manual(values=c("#CC0B0B","#0B7ACC")) +
   theme(legend.position = "none",
         axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         plot.margin = unit(c(2,0,2,4), "pt"))+
-  scale_y_continuous(breaks=pretty_breaks(n=6))+
+  scale_y_continuous(labels = label_number(scale = 1/1000, suffix = "kb"),
+                     breaks = breaks_width(100000))+
   ylab("N50")
 
+n50
+
+summary(hq$ctg_L50)
+
 gcplot <- ggplot(hq, aes(x=SampleType, y=gc_avg, fill=SampleType)) +
-  geom_boxplot(lwd=.3,outlier.shape = NA, alpha = 0.9) +
+  geom_boxplot(lwd=.3, alpha = 0.9) +
   scale_fill_manual(values=c("#CC0B0B","#0B7ACC")) +
   theme(legend.position = "none",
         axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         plot.margin = unit(c(2,0,2,4), "pt"))+
-  scale_y_continuous(labels = function(x) paste0(x, "%"), breaks=pretty_breaks(n=6))+
+  scale_y_continuous(breaks = pretty_breaks(4))+
   ylab("GC Content")
+
+gcplot
 
 points <- points + theme(legend.position = "none")
 
 stats <- (points / histo_size / plot_layout(heights = c(1, 0.8))) |
-  (contigsplot / n50 / gcplot /plot_spacer() / plot_layout(heights = c(1, 1, 1, 0.6))) |
+  (contigsplot / n50 / gcplot /plot_spacer() / plot_layout(heights = c(1, 1, 1, 0.1))) |
   plot_layout(widths = c(3,1))
 
 stats
 
 stats_leg <- ggdraw() +
     draw_plot(stats, x = 0, y = 0, width = 1, height = 1) +
-    draw_plot(leg_points, x = .6, y = .12, width = .45, height = .15)+
+    draw_plot(leg_points, x = .63, y = 0, width = .45, height = .15)+
     theme(panel.background = element_rect(fill = "white",colour = "white"))  
 
 stats_leg
 
-ggsave("MAGs_data_input/Figures/Figure2/SciData_fig2.png", 
-       stats_leg, width = 1000, height = 900, dpi = 300, units = "px")
+ggsave("Nelore_MAGs/Figures/Figure2/SciData_fig2.png", 
+       stats_leg, width = 1600, height = 1300, dpi = 300, units = "px")
