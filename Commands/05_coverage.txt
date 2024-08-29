@@ -1,0 +1,17 @@
+#### Coverage of HQ Nelore MAGs (required by NCBI) ####
+
+cat ruminal_MAG_*.fasta > ruminal_MAGs.fasta
+cat fecal_MAG_*.fasta > fecal_MAGs.fasta
+
+bowtie2-build ruminal_MAGs.fasta ruminal_MAGs --threads 24
+bowtie2-build fecal_MAGs.fasta fecal_MAGs --threads 24
+
+bowtie2 --threads 24 -x ruminal_MAGs.fasta -1 <reads_R1>.fastq -2 <reads_R2>.fastq --no-unal | samtools view -@ 24 -F 4 -bS > <sample>_mags_rumen.bam
+bowtie2 --threads 24 -x fecal_MAGs.fasta -1 <reads_R1>.fastq -2 <reads_R2>.fastq --no-unal | samtools view -@ 24 -F 4 -bS > <sample>_mags_feces.bam
+
+samtools sort -@ 24 <sample>_mags_rumen.bam -o <sample>_mags_rumen_sorted.bam
+samtools sort -@ 24 <sample>_mags_feces.bam -o <sample>_mags_feces_sorted.bam
+
+coverm genome --bam-files <sample>_mags_rumen_sorted.bam -m mean --min-read-aligned-percent 0.75 --min-read-percent-identity 0.95 --min-covered-fraction 0 --genome-fasta-directory <ruminal_mags_directory> --genome-fasta-extension fasta -t 24 --sharded > <sample>_mags_rumen_coverm_mean.txt
+
+coverm genome --bam-files <sample>_mags_feces_sorted.bam -m mean --min-read-aligned-percent 0.75 --min-read-percent-identity 0.95 --min-covered-fraction 0 --genome-fasta-directory <fecal_mags_directory> --genome-fasta-extension fasta -t 24 --sharded > <sample>_mags_feces_coverm_mean.txt
