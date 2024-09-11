@@ -1,6 +1,8 @@
-#### Run stats for each HQ MAG ####
+#### Run stats for each MQ and HQ MAG ####
 
 ``for i in <HQ_MAGs_directory>/*.fasta; do stats.sh in=${i} format=5 > ${i}_stats.txt; done &`` 
+
+``for j in <MQ_MAGs_directory>/*.fasta; do stats.sh in=${j} format=5 > ${j}_stats.txt; done &`` 
 
 #### Coverage of HQ Nelore MAGs (required by NCBI) ####
 
