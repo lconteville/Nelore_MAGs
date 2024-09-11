@@ -25,7 +25,7 @@ theme_set(theme_bw()+ theme(
   panel.grid.minor = element_blank()))
 
 #### MAGs QUALITY ####
-quality_summary <-  read.csv("Nelore_MAGs/Data/mags_quality_summary.tsv", header=TRUE, sep="\t")
+quality_summary <-  read.csv("Nelore_MAGs/Data/supplementary_table_s2.tsv", header=TRUE, sep="\t")
 
 quality_summary$SampleType_Quality <- paste(quality_summary$SampleType,quality_summary$Quality_assessment, sep="_")
 
@@ -35,8 +35,9 @@ quality_summary$SampleType_Quality[quality_summary$SampleType_Quality == "Feces_
 quality_summary$SampleType_Quality[quality_summary$SampleType_Quality == "Feces_Medium-quality"] <- "Medium-quality MAGs"
 quality_summary$SampleType_Quality[quality_summary$SampleType_Quality == "Rumen_Medium-quality"] <- "Medium-quality MAGs"
 
-
-quality_summary$SampleType_Quality <- factor(quality_summary$SampleType_Quality, levels=c("HQ Ruminal MAGs (n = 497)","HQ Fecal MAGs (n = 486)","Medium-quality MAGs"))
+quality_summary$SampleType_Quality <- factor(quality_summary$SampleType_Quality, levels=c("HQ Ruminal MAGs (n = 497)",
+                                                                                          "HQ Fecal MAGs (n = 486)",
+                                                                                          "Medium-quality MAGs"))
 
 
 points <- ggplot(quality_summary, aes(x=Completeness, y=Contamination,
@@ -49,7 +50,7 @@ points <- ggplot(quality_summary, aes(x=Completeness, y=Contamination,
         legend.key.height = unit(9, 'pt'))+
   scale_colour_manual(values=c("#CC0B0B","#0B7ACC","grey"))+
   guides(colour=guide_legend(override.aes=list(size=2.5, alpha =1)))+ 
-  ggtitle('A')
+  ggtitle('(a)')
 
 points
 
@@ -60,11 +61,7 @@ leg_points <- as_ggplot(leg_points)
 hq <- quality_summary[quality_summary$Quality_assessment == c("High-quality"),]
 hq$SampleType <- factor(hq$SampleType, levels=c("Rumen","Feces"))
 
-hist(hq$contig_bp)
-
-ggplot(hq, aes(x=contig_bp)) + geom_histogram(binwidth=500000)
-
-histo_size <- ggplot(hq, aes(x=contig_bp, fill=SampleType)) + 
+histo_size <- ggplot(hq, aes(x=Total_length, fill=SampleType)) + 
   geom_histogram(bins = 15, color= "white")+
   scale_fill_manual(values=c("#CC0B0B","#0B7ACC"))+
   facet_wrap(SampleType~.)+
@@ -73,7 +70,8 @@ histo_size <- ggplot(hq, aes(x=contig_bp, fill=SampleType)) +
   scale_y_continuous(limits=c(0, 150))+
   xlab("MAGs Size (Mbp)")+
   ylab("Count")+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+ 
+  ggtitle('(b)')
 
 histo_size
 
@@ -87,14 +85,14 @@ contigsplot <- ggplot(hq, aes(x=SampleType, y=n_contigs, fill=SampleType)) +
         plot.margin = unit(c(2,0,2,4), "pt"))+
   scale_y_continuous(breaks = breaks_width(250))+
   ylab("# contigs")+ 
-  ggtitle('C')
+  ggtitle('(c)')
 
 contigsplot
 
 summary(hq$n_contigs)
 nrow(hq[hq$n_contigs < 200,])
 
-n50 <- ggplot(hq, aes(x=SampleType, y=ctg_L50, fill=SampleType)) +
+n50 <- ggplot(hq, aes(x=SampleType, y=N50, fill=SampleType)) +
   geom_boxplot(lwd=.3, alpha = 0.9) +
   scale_fill_manual(values=c("#CC0B0B","#0B7ACC")) +
   theme(legend.position = "none",
@@ -103,14 +101,12 @@ n50 <- ggplot(hq, aes(x=SampleType, y=ctg_L50, fill=SampleType)) +
         axis.ticks.x = element_blank(),
         plot.margin = unit(c(2,0,2,4), "pt"))+
   scale_y_continuous(labels = label_number(scale = 1/1000, suffix = "kb"),
-                     breaks = breaks_width(100000))+
+                     breaks = breaks_width(70000))+
   ylab("N50")
 
 n50
 
-summary(hq$ctg_L50)
-
-gcplot <- ggplot(hq, aes(x=SampleType, y=gc_avg, fill=SampleType)) +
+gcplot <- ggplot(hq, aes(x=SampleType, y=Average_GC, fill=SampleType)) +
   geom_boxplot(lwd=.3, alpha = 0.9) +
   scale_fill_manual(values=c("#CC0B0B","#0B7ACC")) +
   theme(legend.position = "none",
@@ -126,17 +122,17 @@ gcplot
 points <- points + theme(legend.position = "none")
 
 stats <- (points / histo_size / plot_layout(heights = c(1, 0.8))) |
-  (contigsplot / n50 / gcplot /plot_spacer() / plot_layout(heights = c(1, 1, 1, 0.1))) |
-  plot_layout(widths = c(3,1))
+  (contigsplot / n50 / gcplot /plot_spacer() / plot_layout(heights = c(1, 1, 1, 0.2))) |
+  plot_layout(widths = c(2.7,1))
 
 stats
 
 stats_leg <- ggdraw() +
     draw_plot(stats, x = 0, y = 0, width = 1, height = 1) +
-    draw_plot(leg_points, x = .63, y = 0, width = .45, height = .15)+
+    draw_plot(leg_points, x = .62, y = .02, width = .45, height = .15)+
     theme(panel.background = element_rect(fill = "white",colour = "white"))  
 
 stats_leg
 
 ggsave("Nelore_MAGs/Figures/Figure2/SciData_fig2.png", 
-       stats_leg, width = 1600, height = 1300, dpi = 300, units = "px")
+       stats_leg, width = 1500, height = 1300, dpi = 300, units = "px")
